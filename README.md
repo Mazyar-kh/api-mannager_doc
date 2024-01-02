@@ -4,7 +4,7 @@ In the event of CPU overload, it is imperative to follow the protocol outlined b
 
 1. Access all Container Engines [1, 2, 3], BDMS [1, 2, 3] machines, and the API Manager via SSH.
 
-2. Omit the designated API Manager node from the Nginx configuration files using the following IP addresses: (node1: 10.211.9.10), (node2: 10.211.9.11) and (node3: 10.211.9.12).
+2. Exclude the specified API Manager nodes from the Nginx configuration files using the following IP addresses: (node1: 10.211.9.10), (node2: 10.211.9.11), and (node3: 10.211.9.12), in accordance with the structure of the included configuration files.
 
     2.1. For the Container Engines, utilize the "docker exec" command to enter the Nginx container and navigate to the configuration file.
         
