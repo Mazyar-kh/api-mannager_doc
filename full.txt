@@ -1,0 +1,92 @@
+API Manager Operational Guidelines
+
+In the event of CPU overload, it is crucial to follow the protocol outlined below:
+
+    Accessing Machines and API Manager via SSH:
+        Access all Container Engines [1, 2, 3], BDMS [1, 2, 3] machines, and the API Manager via SSH.
+
+    Excluding API Manager Nodes from Nginx Configuration:
+        Exclude the specified API Manager nodes from the Nginx configuration files using the following IP addresses: (node1: 10.211.9.10), (node2: 10.211.9.11), and (node3: 10.211.9.12), following the structure of the included configuration files.
+            For Container Engines:
+                Utilize the "docker exec" command to enter the Nginx container and navigate to the configuration file.
+                    Within the Nginx container, make the necessary modifications to the configuration files located at: /etc/nginx/conf.d/default.conf.
+            For BDMS Machines:
+                Nginx is installed as a service on the three BDMS machines and does not require the use of Docker.
+                    The path to the Nginx configuration files on the BDMS machines is: /etc/nginx/conf.d.
+
+    Recreating API Manager Containers:
+        After the initial steps, execute the "docker-compose down" command on the API Manager machine to remove the container.
+        Run "docker-compose up" to recreate the containers.
+
+    Reinstating API Manager IP in Nginx Configurations:
+        Subsequently, reinstate the API Manager IP in the Nginx configurations on both the Container Engines and BDMS machines.
+            If multiple API machines are experiencing CPU overload:
+                Perform these procedures separately for each API Manager machine.
+
+Remark: It is imperative to omit API Managers one by one to ensure high availability (HA) of applications.
+
+
+
+an istance of a nginx config file with node1 and node2 both being up:
+
+
+http {
+    upstream api_manager {
+        server 10.211.9.10:8280 max_fails=3 fail_timeout=30s;
+        server 10.211.9.11:8280 max_fails=3 fail_timeout=30s;
+        server 10.211.9.10:8281 max_fails=3 fail_timeout=30s;
+        server 10.211.9.11:8281 max_fails=3 fail_timeout=30s;
+        server 10.211.9.10:8282 max_fails=3 fail_timeout=30s;
+        server 10.211.9.11:8282 max_fails=3 fail_timeout=30s;
+    }
+
+    server {
+        listen 80;
+
+        location / {
+            proxy_pass http://api_manager;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        error_page 500 502 503 504 /error.html;
+        location = /error.html {
+            root /usr/share/nginx/html;
+        }
+    }
+}
+
+
+
+an instance of nginx config file with node 1 down:
+
+
+http {
+    upstream api_manager {
+        # server 10.211.9.10:8280 max_fails=3 fail_timeout=30s;
+        server 10.211.9.11:8280 max_fails=3 fail_timeout=30s;
+        # server 10.211.9.10:8281 max_fails=3 fail_timeout=30s;
+        server 10.211.9.11:8281 max_fails=3 fail_timeout=30s;
+        # server 10.211.9.10:8282 max_fails=3 fail_timeout=30s;
+        server 10.211.9.11:8282 max_fails=3 fail_timeout=30s;
+    }
+
+    server {
+        listen 80;
+
+        location / {
+            proxy_pass http://api_manager;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        error_page 500 502 503 504 /error.html;
+        location = /error.html {
+            root /usr/share/nginx/html;
+        }
+    }
+}
